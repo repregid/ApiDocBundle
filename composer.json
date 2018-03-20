@@ -1,0 +1,15 @@
+{
+    "name": "repregid/api-doc-bundle",
+    "type": "symfony-bundle",
+    "description": "ApiDocBundle",
+    "require": {
+        "php": "^7.1.3",
+        "nelmio/api-doc-bundle": "^3.0",
+        "symfony/asset": "^4.0.3",
+        "doctrine/common": "~2.4"
+    },
+    "autoload": {
+        "psr-4": { "Repregid\\ApiDocBundle\\": "" }
+    },
+    "minimum-stability": "dev"
+}
