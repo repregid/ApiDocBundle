@@ -7,7 +7,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 /**
  * Class Configuration
- * @package Repregid\ApiBundle\DependencyInjection
+ * @package Repregid\ApiDocBundle\DependencyInjection
  */
 class Configuration implements ConfigurationInterface
 {

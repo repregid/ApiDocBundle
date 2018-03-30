@@ -4,6 +4,8 @@ namespace Repregid\ApiDocBundle;
 
 use Doctrine\Common\Inflector\Inflector;
 use Nelmio\ApiDocBundle\Model\Model;
+use Symfony\Component\Form\FormInterface;
+use Symfony\Component\Form\Forms;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
@@ -14,6 +16,8 @@ use Symfony\Component\Routing\RouteCollection;
  */
 class DocGenerator
 {
+    const FILTER_TREE_DEPTH = 3;
+
     /**
      * @var array
      */
@@ -45,7 +49,8 @@ class DocGenerator
     public function generateOne($name, Route $route)
     {
         $entity     = $route->getDefault('entity');
-        $type       = $route->getDefault('formType');
+        $formType   = $route->getDefault('formType');
+        $filterType = $route->getDefault('filterType');
         $groups     = $route->getDefault('groups');
         $subView    = $route->getDefault('subViewClass');
 
@@ -55,12 +60,17 @@ class DocGenerator
 
         $this->definitions[$modelEntity->getHash()] = $modelEntity;
 
-        if($type) {
-            $modelType  = DefinitionResolver::getModel($type);
-            $type       = DefinitionResolver::getShortName($type);
+        if($formType) {
+            $modelType  = DefinitionResolver::getModel($formType);
+            $formType   = DefinitionResolver::getShortName($formType);
             $this->definitions[$modelType->getHash()] = $modelType;
         }
 
+        if($filterType) {
+            $modelType  = DefinitionResolver::getModel($filterType);
+            $filterType = DefinitionResolver::getShortName($filterType);
+            $this->definitions[$modelType->getHash()] = $modelType;
+        }
 
         if($route->getRequirement('id')) {
             in_array('DELETE', $route->getMethods())    && $actionType = 'delete';
@@ -123,17 +133,47 @@ class DocGenerator
         /**
          * body parameters
          */
-        if($type) {
-            $name = Inflector::tableize(preg_replace('/(.*)Type/', '$1', $type));
+        if($formType) {
+            $name = Inflector::tableize(preg_replace('/(.*)Type/', '$1', $formType));
             $parameters[] = [
                 'name' => $name,
                 'in' => 'body',
                 'description' => "$shortEntity`s data",
                 'required' => true,
-                'type' => $type,
+                'type' => $formType,
                 'schema' => [
                     'type' => 'array',
-                    'items' => ['$ref' => "#/definitions/$type" ]
+                    'items' => ['$ref' => "#/definitions/$formType" ]
+                ],
+            ];
+        }
+
+        /**
+         * query parameters
+         */
+        if($filterType) {
+            foreach(['page', 'pageSize', 'query', 'sort'] as $item) {
+                $parameters[] = [
+                    'name' => $item,
+                    'in' => 'query',
+                    'description' => "Filter parameter",
+                    'required' => false,
+                    'type' => 'string'
+                ];
+            }
+
+            $form = Forms::createFormFactory()->create($route->getDefault('filterType'));
+
+            $parameters[] = [
+                'name' => 'filter',
+                'in' => 'body', // нужен query но тогда не навесить пример, по-этому body
+                'description' => "Filter`s data",
+                'required' => false,
+                'type' => 'string',
+                'schema' => [
+                    'type' => 'array',
+                    'items' => [],
+                    'example' => $this->parseForm($form)
                 ],
             ];
         }
@@ -145,6 +185,35 @@ class DocGenerator
             'tags'          => [$subView ?: $shortEntity],
             'parameters'    => $parameters
         ];
+    }
+
+    /**
+     * @param FormInterface $form
+     * @param int $depth
+     * @return array
+     */
+    public function parseForm(FormInterface $form, $depth = 0)
+    {
+        $result = [];
+        $field  = $depth > 0 ? $form->getName() : '';
+
+        $depth++;
+
+        if($form->count() > 0) {
+            if($depth > self::FILTER_TREE_DEPTH) {
+                $result[] = $field.'...';
+            } else {
+                foreach($form->all() as $child) {
+                    foreach($this->parseForm($child, $depth) as $item) {
+                        $result[] = $field.(!$field ? '' : '.').$item;
+                    }
+                }
+            }
+        } else {
+            $result[] = $field;
+        }
+
+        return $result;
     }
 
     /**
