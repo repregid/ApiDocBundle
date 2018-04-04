@@ -66,12 +66,6 @@ class DocGenerator
             $this->definitions[$modelType->getHash()] = $modelType;
         }
 
-        if($filterType) {
-            $modelType  = DefinitionResolver::getModel($filterType);
-            $filterType = DefinitionResolver::getShortName($filterType);
-            $this->definitions[$modelType->getHash()] = $modelType;
-        }
-
         if($route->getRequirement('id')) {
             in_array('DELETE', $route->getMethods())    && $actionType = 'delete';
             in_array('PATCH', $route->getMethods())     && $actionType = 'update';
