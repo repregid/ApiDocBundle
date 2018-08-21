@@ -70,6 +70,7 @@ class DocGenerator
             in_array('DELETE', $route->getMethods())    && $actionType = 'delete';
             in_array('PATCH', $route->getMethods())     && $actionType = 'update';
             in_array('GET', $route->getMethods())       && $actionType = 'view';
+            in_array('PUT', $route->getMethods())       && $actionType = 'update';
         } else {
             in_array('POST', $route->getMethods())      && $actionType = 'create';
             in_array('GET', $route->getMethods())       && $actionType = 'list';
