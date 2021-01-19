@@ -2,7 +2,8 @@
 
 namespace Repregid\ApiDocBundle;
 
-use Doctrine\Common\Inflector\Inflector;
+use Doctrine\Inflector\Inflector;
+use Doctrine\Inflector\InflectorFactory;
 use Nelmio\ApiDocBundle\Model\Model;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\Forms;
@@ -129,7 +130,8 @@ class DocGenerator
          * body parameters
          */
         if($formType) {
-            $name = Inflector::tableize(preg_replace('/(.*)Type/', '$1', $formType));
+            $inflector = InflectorFactory::create()->build();
+            $name = $inflector->tableize(preg_replace('/(.*)Type/', '$1', $formType));
             $parameters[] = [
                 'name' => $name,
                 'in' => 'body',
